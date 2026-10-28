@@ -1,0 +1,67 @@
+{
+  "modeli": "LogisticRegression",
+  "data": "2026-10-28T09:50:36",
+  "madhesia_dataset": 1567,
+  "train": 1253,
+  "test": 314,
+  "cv_f1": {
+    "LogisticRegression": 0.9976,
+    "NaiveBayes": 0.9944,
+    "LinearSVC": 0.9976
+  },
+  "test_accuracy": 0.9968,
+  "test_f1": 0.9968,
+  "raporti": {
+    "negativ": {
+      "precision": 0.9937106918238994,
+      "recall": 1.0,
+      "f1-score": 0.9968454258675079,
+      "support": 158.0
+    },
+    "pozitiv": {
+      "precision": 1.0,
+      "recall": 0.9935897435897436,
+      "f1-score": 0.9967845659163987,
+      "support": 156.0
+    },
+    "accuracy": 0.9968152866242038,
+    "macro avg": {
+      "precision": 0.9968553459119497,
+      "recall": 0.9967948717948718,
+      "f1-score": 0.9968149958919533,
+      "support": 314.0
+    },
+    "weighted avg": {
+      "precision": 0.9968353162680766,
+      "recall": 0.9968152866242038,
+      "f1-score": 0.9968151897134537,
+      "support": 314.0
+    }
+  },
+  "matrica_konfuzionit": [
+    [
+      158,
+      0
+    ],
+    [
+      1,
+      155
+    ]
+  ],
+  "gabime_shembull": [
+    {
+      "koment": "mrekulli fare",
+      "e_verteta": "pozitiv",
+      "parashikuar": "negativ"
+    }
+  ],
+  "test_real_accuracy": 0.975,
+  "test_real_f1": 0.975,
+  "test_real_gabime": [
+    {
+      "koment": "Paketimi i kujdesshëm, produkti origjinal",
+      "e_verteta": "pozitiv",
+      "parashikuar": "negativ"
+    }
+  ]
+}

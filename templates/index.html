@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analizuesi i Sentimentit</title>
+<style>
+  :root {
+    --bg: #f5f3ef; --card: #ffffff; --ink: #1d232b; --muted: #6b7280; --line: #e4e0d8;
+    --pos: #2e9e6b; --pos-soft: #e3f4ec; --neg: #d1495b; --neg-soft: #fbe7ea;
+    --accent: #3d5a80; --warn: #b7791f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171c; --card: #1d2229; --ink: #e8eaed; --muted: #9aa3ad; --line: #2c333c;
+            --pos-soft: #17352a; --neg-soft: #3a1d22; --accent: #7fa3d1; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { margin: 0; font-size: 1.7rem; letter-spacing: -0.02em; }
+  header p { margin: 4px 0 24px; color: var(--muted); }
+  nav { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  nav button { background: none; border: 0; padding: 10px 14px; font: inherit; color: var(--muted);
+               cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  nav button.active { color: var(--ink); border-color: var(--accent); font-weight: 600; }
+  section { display: none; } section.active { display: block; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  textarea { width: 100%; min-height: 110px; padding: 12px; border-radius: 8px; border: 1px solid var(--line);
+             background: var(--bg); color: var(--ink); font: inherit; resize: vertical; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .btn { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px;
+         font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .chip { font-size: .85rem; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line);
+          background: var(--bg); cursor: pointer; color: var(--ink); }
+  label.check { color: var(--muted); font-size: .9rem; display: flex; gap: 6px; align-items: center; }
+  .verdict { display: flex; align-items: center; gap: 14px; }
+  .badge { font-size: 1.3rem; font-weight: 700; padding: 6px 16px; border-radius: 8px; text-transform: capitalize; }
+  .badge.pozitiv { background: var(--pos-soft); color: var(--pos); }
+  .badge.negativ { background: var(--neg-soft); color: var(--neg); }
+  .bar { height: 10px; border-radius: 99px; background: var(--neg-soft); overflow: hidden; margin: 14px 0 4px; }
+  .bar > div { height: 100%; background: var(--pos); transition: width .4s ease; }
+  .bar-legend { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); }
+  .warn { color: var(--warn); font-size: .9rem; margin-top: 8px; }
+  h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 8px; }
+  .kw { display: inline-block; margin: 0 6px 6px 0; padding: 3px 9px; border-radius: 6px; font-size: .9rem; }
+  .kw.p { background: var(--pos-soft); color: var(--pos); } .kw.n { background: var(--neg-soft); color: var(--neg); }
+  .reply { background: var(--bg); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
+  .meta { color: var(--muted); font-size: .85rem; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 12px; }
+  .stat b { display: block; font-size: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl { max-height: 420px; overflow: auto; margin-top: 12px; }
+  .imgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .imgs img { width: 100%; border-radius: 8px; background: #fff; border: 1px solid var(--line); }
+  .err { color: var(--neg); }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Analizuesi i Sentimentit</h1>
+    <p>Klasifikon komentet në shqip si <b>pozitive</b> ose <b>negative</b> me Machine Learning.</p>
+  </header>
+
+  <nav>
+    <button class="active" data-tab="test">Testo komentin</button>
+    <button data-tab="batch">Shumë komente</button>
+    <button data-tab="model">Modeli</button>
+  </nav>
+
+  <!-- 1. Testo një koment -->
+  <section id="test" class="active">
+    <div class="card">
+      <textarea id="text" placeholder="Shkruaj një koment, p.sh. “Shërbimi ishte i shpejtë dhe stafi shumë i sjellshëm”"></textarea>
+      <div class="chips" id="examples"></div>
+      <div class="row">
+        <button class="btn" id="go">Analizo</button>
+        <label class="check"><input type="checkbox" id="useLlm"> Përdor LLM lokal (Ollama), nëse ekziston</label>
+      </div>
+    </div>
+
+    <div class="card hidden" id="result">
+      <div class="verdict">
+        <span class="badge" id="badge"></span>
+        <span class="meta" id="conf"></span>
+      </div>
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="bar-legend"><span>negativ</span><span>pozitiv</span></div>
+      <div class="warn hidden" id="unsure">⚠ Modeli nuk është shumë i sigurt për këtë koment.</div>
+
+      <h3>Fjalët që ndikuan</h3>
+      <div id="kws"></div>
+
+      <h3>Asistenti</h3>
+      <p class="meta" id="triage"></p>
+      <div class="reply" id="reply"></div>
+      <p class="meta" id="llmInfo"></p>
+
+      <h3>A është i saktë rezultati?</h3>
+      <div class="row" style="margin-top:0">
+        <button class="btn ghost" data-fb="pozitiv">Është pozitiv</button>
+        <button class="btn ghost" data-fb="negativ">Është negativ</button>
+        <span class="meta" id="fbMsg"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Batch -->
+  <section id="batch">
+    <div class="card">
+      <p style="margin-top:0">Ngarko një skedar <b>.txt</b> (një koment për rresht), <b>.csv</b> (kolona <code>koment</code>),
+         <b>.pdf</b> ose <b>imazh</b> (OCR).</p>
+      <div class="row">
+        <input type="file" id="file" accept=".txt,.csv,.pdf,.png,.jpg,.jpeg">
+        <button class="btn" id="upload">Klasifiko</button>
+      </div>
+      <p class="err" id="batchErr"></p>
+    </div>
+    <div class="card hidden" id="batchRes">
+      <div class="stats" id="batchStats"></div>
+      <div class="row"><a class="btn ghost" id="dl" href="#">Shkarko CSV</a></div>
+      <div class="tbl"><table><thead><tr><th>Komenti</th><th>Sentimenti</th><th>Besueshmëria</th><th>Prioriteti</th></tr></thead>
+        <tbody id="batchRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- 3. Info për modelin -->
+  <section id="model">
+    <div class="card">
+      <div class="stats" id="modelStats"></div>
+      <div class="row">
+        <button class="btn ghost" id="retrain">Ritrajno me korrigjimet</button>
+        <span class="meta" id="retrainMsg"></span>
+      </div>
+    </div>
+    <div class="card imgs">
+      <img src="/reports/krahasimi_modeleve.png" alt="Krahasimi i modeleve">
+      <img src="/reports/matrica_konfuzionit.png" alt="Matrica e konfuzionit">
+      <img src="/reports/shperndarja.png" alt="Shpërndarja e klasave">
+      <img src="/reports/gjatesia.png" alt="Gjatësia e komenteve">
+      <img src="/reports/fjalet_kryesore.png" alt="Fjalët kryesore" style="grid-column: 1 / -1">
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pct = (x) => (x * 100).toFixed(1) + "%";
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.gabim || res.statusText);
+  return data;
+}
+
+// Tabs
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button, section").forEach(e => e.classList.remove("active"));
+  b.classList.add("active"); $(b.dataset.tab).classList.add("active");
+  if (b.dataset.tab === "model") loadModel();
+});
+
+// Shembuj
+["Stafi shumë i sjellshëm, do kthehem prapë!", "Porosia vonoi 2 javë, s'ia vlen 😡",
+ "nuk kisha asnje problem", "Cilësi e dobët për këtë çmim"].forEach(t => {
+  const c = document.createElement("button"); c.className = "chip"; c.textContent = t;
+  c.onclick = () => { $("text").value = t; analyze(); }; $("examples").append(c);
+});
+
+let lastText = "";
+async function analyze() {
+  const text = $("text").value.trim();
+  if (!text) return $("text").focus();
+  $("go").disabled = true;
+  try {
+    const r = await api("/api/predict", { method: "POST", headers: {"Content-Type": "application/json"},
+                                          body: JSON.stringify({ text, llm: $("useLlm").checked }) });
+    lastText = text;
+    $("result").classList.remove("hidden");
+    $("badge").className = "badge " + r.sentimenti; $("badge").textContent = r.sentimenti;
+    $("conf").textContent = "Besueshmëria: " + pct(r.besueshmeria);
+    $("barFill").style.width = pct(r.probabilitetet.pozitiv || 0);
+    $("unsure").classList.toggle("hidden", !r.i_pasigurt);
+    $("kws").innerHTML = r.fjalet_kyce.length
+      ? r.fjalet_kyce.map(k => `<span class="kw ${k.ndikimi > 0 ? "p" : "n"}">${esc(k.fjala)} ${k.ndikimi > 0 ? "+" : ""}${k.ndikimi}</span>`).join("")
+      : '<span class="meta">—</span>';
+    const a = r.asistenti;
+    $("triage").innerHTML = `Prioriteti: <b>${esc(a.prioriteti)}</b> · Veprimi: ${esc(a.veprimi)}`;
+    $("reply").textContent = a.pergjigja;
+    $("llmInfo").textContent = "Burimi i përgjigjes: " + a.burimi +
+      ("llm_sentimenti" in r ? ` · Mendimi i LLM: ${r.llm_sentimenti ?? "LLM jo i disponueshëm"}` : "");
+    $("fbMsg").textContent = "";
+  } catch (e) { alertBox(e.message); }
+  finally { $("go").disabled = false; }
+}
+function alertBox(msg) { $("result").classList.remove("hidden"); $("badge").className = "badge"; $("badge").textContent = "Gabim"; $("conf").textContent = msg; }
+$("go").onclick = analyze;
+$("text").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) analyze(); });
+
+document.querySelectorAll("[data-fb]").forEach(b => b.onclick = async () => {
+  try {
+    const r = await api("/api/feedback", { method: "POST", headers: {"Content-Type": "application/json"},
+                                           body: JSON.stringify({ text: lastText, sentimenti: b.dataset.fb }) });
+    $("fbMsg").textContent = r.mesazhi;
+  } catch (e) { $("fbMsg").textContent = e.message; }
+});
+
+// Batch
+$("upload").onclick = async () => {
+  const f = $("file").files[0]; $("batchErr").textContent = "";
+  if (!f) return $("batchErr").textContent = "Zgjidh një skedar.";
+  const fd = new FormData(); fd.append("file", f);
+  $("upload").disabled = true;
+  try {
+    const r = await api("/api/batch", { method: "POST", body: fd }); const s = r.permbledhje;
+    $("batchRes").classList.remove("hidden");
+    $("batchStats").innerHTML = `
+      <div class="stat"><b>${s.gjithsej}</b>komente</div>
+      <div class="stat"><b style="color:var(--pos)">${s.pozitiv}</b>pozitive</div>
+      <div class="stat"><b style="color:var(--neg)">${s.negativ}</b>negative</div>
+      <div class="stat"><b>${s.perqindja_pozitive}%</b>kënaqësia</div>
+      <div class="stat"><b>${s.te_pasigurt}</b>për rishikim</div>`;
+    $("dl").href = r.shkarko;
+    $("batchRows").innerHTML = r.rreshtat.map(x => `<tr><td>${esc(x.koment)}</td>
+      <td><span class="kw ${x.sentimenti === "pozitiv" ? "p" : "n"}">${x.sentimenti}</span></td>
+      <td>${pct(x.besueshmeria)}</td><td>${esc(x.prioriteti)}</td></tr>`).join("");
+  } catch (e) { $("batchErr").textContent = e.message; }
+  finally { $("upload").disabled = false; }
+};
+
+// Modeli
+async function loadModel() {
+  const m = await api("/api/model");
+  const stat = (v, l) => `<div class="stat"><b>${v ?? "—"}</b>${l}</div>`;
+  $("modelStats").innerHTML = stat(m.modeli, "algoritmi") + stat(m.madhesia_dataset, "komente trajnimi") +
+    stat(m.test_accuracy != null ? pct(m.test_accuracy) : null, "saktësia (test)") +
+    stat(m.test_real_accuracy != null ? pct(m.test_real_accuracy) : null, "saktësia (komente reale)");
+}
+$("retrain").onclick = async () => {
+  $("retrain").disabled = true; $("retrainMsg").textContent = "Duke trajnuar...";
+  try {
+    const r = await api("/api/retrain", { method: "POST" });
+    $("retrainMsg").textContent = `U ritrajnua (${r.modeli}).`; loadModel();
+    document.querySelectorAll(".imgs img").forEach(i => i.src = i.src.split("?")[0] + "?t=" + Date.now());
+  } catch (e) { $("retrainMsg").textContent = e.message; }
+  finally { $("retrain").disabled = false; }
+};
+</script>
+</body>
+</html>

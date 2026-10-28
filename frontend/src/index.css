@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Tokenat e ngjyrave: ndërrohen në një vend për temën e çelët / të errët.
+   Të dhënat përdorin çiftin divergjent blu (pozitiv) / e kuqe (negativ);
+   statuset (good / warning / critical) shoqërohen gjithmonë me ikonë + etiketë. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --sunken: #f2f1ed;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #66655f;
+  --axis: #898781;
+  --line: #e1e0d9;
+  --line-2: #c3c2b7;
+  --pos: #2a78d6;
+  --neg: #e34948;
+  --pos-soft: #e6effb;
+  --neg-soft: #fbe8e7;
+  --neutral: #a3a199;
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --btn: #1c1c1a;
+  --btn-ink: #fcfcfb;
+  --shadow: 0 1px 2px rgb(60 58 50 / 0.06), 0 8px 24px -12px rgb(60 58 50 / 0.12);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --sunken: #141413;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --ink-3: #a3a199;
+  --axis: #898781;
+  --line: #2c2c2a;
+  --line-2: #383835;
+  --pos: #3987e5;
+  --neg: #e66767;
+  --pos-soft: #172739;
+  --neg-soft: #3a1d1d;
+  --neutral: #6b6a65;
+  --good-ink: #0ca30c;
+  --btn: #f0efec;
+  --btn-ink: #141413;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-axis: var(--axis);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-pos-soft: var(--pos-soft);
+  --color-neg-soft: var(--neg-soft);
+  --color-neutral: var(--neutral);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --color-btn: var(--btn);
+  --color-btn-ink: var(--btn-ink);
+  --shadow-card: var(--shadow);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--pos-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skeleton: dritë që lëviz, vetëm kur përdoruesi s'ka kërkuar më pak lëvizje */
+.skeleton {
+  background: var(--sunken);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  [data-theme="dark"] .skeleton::after {
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.05), transparent);
+  }
+}
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Recharts: hiq kornizën e fokusit të klikimit mbi SVG */
+.recharts-wrapper,
+.recharts-surface {
+  outline: none;
+}
+
+@media print {
+  :root {
+    --page: #ffffff;
+    --surface: #ffffff;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-full {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .break-avoid {
+    break-inside: avoid;
+  }
+}
